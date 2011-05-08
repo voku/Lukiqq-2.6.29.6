@@ -191,7 +191,7 @@ SUBARCH := $(shell uname -m | sed -e s/i.86/i386/ -e s/sun4u/sparc64/ \
 # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
 export KBUILD_BUILDHOST := $(SUBARCH)
 ARCH			:= arm
-CROSS_COMPILE  := /opt/ctng/bin/arm-spica-linux-uclibcgnueabi-
+CROSS_COMPILE  := /home/lukasz/ctng/opt/arm-spica-linux-uclibcgnueabi/bin/arm-spica-linux-uclibcgnueabi-
 #CROSS_COMPILE	:= /usr/local/arm/4.3.1-eabi-armv6/usr/bin/arm-linux-
 #CROSS_COMPILE	:= $(shell if [ -f .cross_compile ]; then \
 					cat .cross_compile; \
@@ -230,8 +230,8 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS   = -Wall -Wstrict-prototypes -O2 -fomit-frame-pointer
-HOSTCXXFLAGS = -O2
+HOSTCFLAGS   = -Wall -Wstrict-prototypes -O3 -fomit-frame-pointer
+HOSTCXXFLAGS = -O3
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -335,7 +335,7 @@ MODFLAGS	= -DMODULE -O3 -marm -mfpu=vfp -mtune=arm1176jzf-s
 CFLAGS_MODULE   = $(MODFLAGS)
 AFLAGS_MODULE   = $(MODFLAGS)
 LDFLAGS_MODULE  =
-CFLAGS_KERNEL	= -O3 -marm -mfpu=vfp -mtune=arm1176jzf-s
+CFLAGS_KERNEL	= -O3 -Os -mtune=arm1176jzf-s -march=armv6zk -mfpu=vfp -mfloat-abi=softfp --param l1-cache-size=16 --param l1-cache-line-size=32 -ftree-vectorize -fomit-frame-pointer -DSP -DROLL
 AFLAGS_KERNEL	=
 
 
@@ -527,7 +527,7 @@ all: vmlinux
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= -Os
 else
-KBUILD_CFLAGS	+= -O2
+KBUILD_CFLAGS	+= -O3
 endif
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
@@ -566,6 +566,9 @@ endif
 # arch Makefile may override CC so keep this after arch Makefile is included
 NOSTDINC_FLAGS += -nostdinc -isystem $(shell $(CC) -print-file-name=include)
 CHECKFLAGS     += $(NOSTDINC_FLAGS)
+
+# improve gcc optimization
+CFLAGS += $(call cc-option,-funit-at-a-time,)
 
 # warn about C99 declaration after statement
 KBUILD_CFLAGS += $(call cc-option,-Wdeclaration-after-statement,)

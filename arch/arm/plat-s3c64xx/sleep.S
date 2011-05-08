@@ -25,6 +25,7 @@
 #define LL_UART (S3C_PA_UART + (0x400 * CONFIG_S3C_LOWLEVEL_UART_PORT))
 
 	.text
+
 	/* s3c_cpu_save
 	 *
 	 * Save enough processor state to allow the restart of the pm.c
@@ -33,8 +34,8 @@
 	 * entry:
 	 *	r0 = pointer to the save block
 	 * exit:
-	 *	r0 = exit code: 0 => stored data
-	 *			1 => resumed from sleep
+	 *	r0 = exit code: 1 => stored data
+	 *			0 => resumed from sleep
 	*/
 
 ENTRY(s3c6410_cpu_save)
@@ -76,7 +77,7 @@ s3c6410_sleep_save_phys:
 
 	.word	0x2bedf00d
 
-	/* s3c_cpu_resume
+	/* s3c_cpu_reusme
 	 *
 	 * This is the entry point, stored by whatever method the bootloader
 	 * requires to get the kernel runnign again. This code expects to be
@@ -140,3 +141,4 @@ ENTRY(s3c6410_cpu_resume)
 	mov	pc, r2				/* jump back */
 
 	.end
+

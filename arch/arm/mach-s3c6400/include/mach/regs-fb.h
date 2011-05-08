@@ -218,7 +218,6 @@ struct s3c_fb_palette {
 static inline void s3c_fb_init_palette(unsigned int window,
 				       struct s3c_fb_palette *palette)
 {
-	if (window < 2) {
 		/* Windows 0/1 are 8/8/8 or A/8/8/8 */
 		palette->r.offset = 16;
 		palette->r.length = 8;
@@ -226,15 +225,6 @@ static inline void s3c_fb_init_palette(unsigned int window,
 		palette->g.length = 8;
 		palette->b.offset = 0;
 		palette->b.length = 8;
-	} else {
-		/* currently we assume RGB 5/6/5 */
-		palette->r.offset = 11;
-		palette->r.length = 5;
-		palette->g.offset = 5;
-		palette->g.length = 6;
-		palette->b.offset = 0;
-		palette->b.length = 5;
-	}
 }
 
 /* Notes on per-window bpp settings

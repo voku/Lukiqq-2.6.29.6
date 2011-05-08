@@ -16,12 +16,12 @@
 /* Default Parameter Values */
 
 #define SERIAL_SPEED		7		/* Baudrate */
-#define LCD_LEVEL			0x061	/* Backlight Level */
+#define LCD_LEVEL			0x07F	/* Backlight Level */
 #define BOOT_DELAY			0		/* Boot Wait Time */
 #define LOAD_RAMDISK		0		/* Enable Ramdisk Loading */
 #define SWITCH_SEL			1		/* Switch Setting (UART[1], USB[0]) */
 #define PHONE_DEBUG_ON		0		/* Enable Phone Debug Mode */
-#define LCD_DIM_LEVEL		0x011	/* Backlight Dimming Level */
+#define LCD_DIM_LEVEL		0x01D	/* Backlight Dimming Level */
 #define MELODY_MODE			0		/* Melody Mode */
 #define REBOOT_MODE			0		/* Reboot Mode */
 #define NATION_SEL			0		/* Language Configuration */

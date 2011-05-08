@@ -20,7 +20,6 @@
 
 #define	PHYS_SIZE					(208 * 1024 * 1024)		/* 208MB */
 
-#define CONFIG_RESERVED_MEM_CMM_JPEG_MFC_POST_CAMERA
 
 /*
  * GPIO Configuration

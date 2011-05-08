@@ -17,6 +17,11 @@
 #ifndef	__LINUX_USB_ANDROID_H
 #define	__LINUX_USB_ANDROID_H
 
+#define MTP_ACTIVE
+#define RNDIS_ACTIVE
+//#define DM_PORT_ACTIVE
+
+
 struct android_usb_platform_data {
 	/* USB device descriptor fields */
 	__u16 vendor_id;
@@ -26,6 +31,15 @@ struct android_usb_platform_data {
 
 	/* Product ID when adb is enabled. */
 	__u16 adb_product_id;
+
+#ifdef MTP_ACTIVE
+	__u16 mtp_product_id;
+	__u16 kies_product_id;
+#endif
+
+#ifdef RNDIS_ACTIVE
+	__u16 rndis_product_id;
+#endif
 
 	__u16 version;
 

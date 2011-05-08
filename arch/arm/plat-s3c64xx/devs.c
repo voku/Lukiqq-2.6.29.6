@@ -400,29 +400,6 @@ struct platform_device s3c_device_rotator = {
 
 EXPORT_SYMBOL(s3c_device_rotator);
 
-/* TV encoder */
-static struct resource s3c_tvenc_resource[] = {
-	[0] = {
-		.start = S3C64XX_PA_TVENC,
-		.end   = S3C64XX_PA_TVENC + S3C_SZ_TVENC - 1,
-		.flags = IORESOURCE_MEM,
-	},
-	[1] = {
-		.start = IRQ_TVENC,
-		.end   = IRQ_TVENC,
-		.flags = IORESOURCE_IRQ,
-	}
-};
-
-struct platform_device s3c_device_tvenc = {
-	.name		= "s3c-tvenc",
-	.id		= -1,
-	.num_resources	= ARRAY_SIZE(s3c_tvenc_resource),
-	.resource	= s3c_tvenc_resource,
-};
-
-EXPORT_SYMBOL(s3c_device_tvenc);
-
 /* board infomation for Hall mouse */
 static struct spi_board_info s3c6410_spi_board_info[] = {
 	{
@@ -468,28 +445,6 @@ struct platform_device s3c_device_spi0 = {
 	}
 };
 EXPORT_SYMBOL(s3c_device_spi0);
-
-/* TV scaler */
-static struct resource s3c_tvscaler_resource[] = {
-	[0] = {
-		.start = S3C64XX_PA_TVSCALER,
-		.end   = S3C64XX_PA_TVSCALER + S3C_SZ_TVSCALER - 1,
-		.flags = IORESOURCE_MEM,
-	},
-	[1] = {
-		.start = IRQ_SCALER,
-		.end   = IRQ_SCALER,
-		.flags = IORESOURCE_IRQ,
-	}
-};
-
-struct platform_device s3c_device_tvscaler = {
-	.name		= "s3c-tvscaler",
-	.id		= -1,
-	.num_resources	= ARRAY_SIZE(s3c_tvscaler_resource),
-	.resource	= s3c_tvscaler_resource,
-};
-EXPORT_SYMBOL(s3c_device_tvscaler);
 
 /* JPEG controller */
 static struct resource s3c_jpeg_resource[] = {
@@ -620,13 +575,6 @@ static struct android_pmem_platform_data pmem_pdata = {
 	.buffered	= 1,	//09.12.01 hoony: surfaceflinger optimize
 };
  
-static struct android_pmem_platform_data pmem_gpu1_pdata = {
-	.name		= "pmem_gpu1",
-	.no_allocator	= 1,
-	.cached		= 1,
-	.buffered	= 1,
-};
-
 static struct android_pmem_platform_data pmem_render_pdata = {
 	.name		= "pmem_render",
 	.no_allocator	= 1,
@@ -663,64 +611,46 @@ static struct android_pmem_platform_data pmem_jpeg_pdata = {
 	.cached		= 0,
 };
 
-static struct android_pmem_platform_data pmem_skia_pdata = {
-	.name		= "pmem_skia",
-	.no_allocator	= 1,
-	.cached		= 0,
-};
- 
 static struct platform_device pmem_device = {
 	.name		= "android_pmem",
 	.id		= 0,
 	.dev		= { .platform_data = &pmem_pdata },
 };
  
-static struct platform_device pmem_gpu1_device = {
-	.name		= "android_pmem",
-	.id		= 1,
-	.dev		= { .platform_data = &pmem_gpu1_pdata },
-};
-
 static struct platform_device pmem_render_device = {
 	.name		= "android_pmem",
-	.id		= 2,
+	.id		= 1,
 	.dev		= { .platform_data = &pmem_render_pdata },
 };
 
 static struct platform_device pmem_stream_device = {
 	.name		= "android_pmem",
-	.id		= 3,
+	.id		= 2,
 	.dev		= { .platform_data = &pmem_stream_pdata },
 };
 
 static struct platform_device pmem_stream2_device = {
 	.name		= "android_pmem",
-	.id		= 4,
+	.id		= 3,
 	.dev		= { .platform_data = &pmem_stream2_pdata },
 };
 
 static struct platform_device pmem_preview_device = {
 	.name		= "android_pmem",
-	.id		= 5,
+	.id		= 4,
 	.dev		= { .platform_data = &pmem_preview_pdata },
 };
 
 static struct platform_device pmem_picture_device = {
 	.name		= "android_pmem",
-	.id		= 6,
+	.id		= 5,
 	.dev		= { .platform_data = &pmem_picture_pdata },
 };
 
 static struct platform_device pmem_jpeg_device = {
 	.name		= "android_pmem",
-	.id		= 7,
+	.id		= 6,
 	.dev		= { .platform_data = &pmem_jpeg_pdata },
-};
-
-static struct platform_device pmem_skia_device = {
-	.name		= "android_pmem",
-	.id		= 8,
-	.dev		= { .platform_data = &pmem_skia_pdata },
 };
 
 void __init s3c6410_add_mem_devices(struct s3c6410_pmem_setting *setting)
@@ -731,12 +661,6 @@ void __init s3c6410_add_mem_devices(struct s3c6410_pmem_setting *setting)
 		platform_device_register(&pmem_device);
 	}
 
-	if (setting->pmem_gpu1_size) {
-		pmem_gpu1_pdata.start = setting->pmem_gpu1_start;
-		pmem_gpu1_pdata.size = setting->pmem_gpu1_size;
-		platform_device_register(&pmem_gpu1_device);
-	}
- 
 	if (setting->pmem_render_size) {
 		pmem_render_pdata.start = setting->pmem_render_start;
 		pmem_render_pdata.size = setting->pmem_render_size;
@@ -771,11 +695,5 @@ void __init s3c6410_add_mem_devices(struct s3c6410_pmem_setting *setting)
 		pmem_jpeg_pdata.start = setting->pmem_jpeg_start;
 		pmem_jpeg_pdata.size = setting->pmem_jpeg_size;
 		platform_device_register(&pmem_jpeg_device);
-	}
-
-	if (setting->pmem_skia_size) {
-		pmem_skia_pdata.start = setting->pmem_skia_start;
-		pmem_skia_pdata.size = setting->pmem_skia_size;
-		platform_device_register(&pmem_skia_device);
 	}
 }

@@ -16,18 +16,19 @@
 /*
  * Spica Rev00 board Battery Table
  */
-#define BATT_CAL		2447	/* 3.60V */
 
-#define BATT_MAXIMUM		406	/* 4.176V */
-#define BATT_FULL		353	/* 4.10V  */
-#define BATT_SAFE_RECHARGE 353	/* 4.10V */
-#define BATT_ALMOST_FULL	188 /* 3.8641V */	//322	/* 4.066V */
-#define BATT_HIGH		112 /* 3.7554V */ 		//221	/* 3.919V */
-#define BATT_MED		66 /* 3.6907V */ 		//146	/* 3.811V */
-#define BATT_LOW		43 /* 3.6566V */		//112	/* 3.763V */
-#define BATT_CRITICAL		8 /* 3.6037V */ 	//(74)	/* 3.707V */
-#define BATT_MINIMUM		(-28) /* 3.554V */	//(38)	/* 3.655V */
-#define BATT_OFF		(-128) /* 3.4029V */	//(-103)	/* 3.45V  */
+#define BATT_CAL		2447
+#define BATT_MAXIMUM		605
+#define BATT_FULL		480
+#define BATT_PRE_FULL		420
+#define BATT_SAFE_RECHARGE	480
+#define BATT_ALMOST_FULL	305
+#define BATT_HIGH		152
+#define BATT_MED		92
+#define BATT_LOW		(1)
+#define BATT_CRITICAL		(-74)
+#define BATT_MINIMUM		(-114)
+#define BATT_OFF		(-356)
 
 /*
  * Spica Rev00 board Temperature Table
@@ -150,23 +151,24 @@ const unsigned int gpio_chg_en_af	= GPIO_TA_EN_AF;
 #define __TEST_DEVICE_DRIVER__
 /* #define __ALWAYS_AWAKE_DEVICE__  */
 #define __TEST_MODE_INTERFACE__
+//#define __ADJUST_RECHARGE_ADC__
 /*****************************************************************************/
 
 #define TOTAL_CHARGING_TIME	(6*60*60*1000)	/* 6 hours */
-#define TOTAL_RECHARGING_TIME	(2*60*60*1000)	/* 2 hours */
+#define TOTAL_RECHARGING_TIME	(3*30*60*1000)	/* 1.5 hours */
 
 #ifdef __BATTERY_COMPENSATION__
-#define COMPENSATE_VIBRATOR		19
-#define COMPENSATE_CAMERA		25
-#define COMPENSATE_MP3			17
-#define COMPENSATE_VIDEO		28
+#define COMPENSATE_VIBRATOR		20
+#define COMPENSATE_CAMERA		50
+#define COMPENSATE_MP3			25
+#define COMPENSATE_VIDEO		30
 #define COMPENSATE_VOICE_CALL_2G	13
-#define COMPENSATE_VOICE_CALL_3G	14
-#define COMPENSATE_DATA_CALL		25
-#define COMPENSATE_LCD			0
+#define COMPENSATE_VOICE_CALL_3G	15
+#define COMPENSATE_DATA_CALL		35
+#define COMPENSATE_LCD			40
 #define COMPENSATE_TA			0
 #define COMPENSATE_CAM_FALSH		0
-#define COMPENSATE_BOOTING		52
+#define COMPENSATE_BOOTING		50
 #endif /* __BATTERY_COMPENSATION__ */
 
 #define convert_adc2voltage(x)		((x - 2170) * 10 / 7 / 100 * 100 + 3200)

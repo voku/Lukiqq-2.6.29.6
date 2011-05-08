@@ -285,8 +285,6 @@ static struct platform_device sec_device_headset = {
 static struct s3c6410_pmem_setting pmem_setting = {
         .pmem_start = RESERVED_PMEM_START,
         .pmem_size = RESERVED_PMEM,
-        .pmem_gpu1_start = GPU1_RESERVED_PMEM_START,
-        .pmem_gpu1_size = RESERVED_PMEM_GPU1,
         .pmem_render_start = RENDER_RESERVED_PMEM_START,
         .pmem_render_size = RESERVED_PMEM_RENDER,
         .pmem_stream_start = STREAM_RESERVED_PMEM_START,
@@ -297,8 +295,6 @@ static struct s3c6410_pmem_setting pmem_setting = {
         .pmem_picture_size = RESERVED_PMEM_PICTURE,
         .pmem_jpeg_start = JPEG_RESERVED_PMEM_START,
         .pmem_jpeg_size = RESERVED_PMEM_JPEG,
-        .pmem_skia_start = SKIA_RESERVED_PMEM_START,
-        .pmem_skia_size = RESERVED_PMEM_SKIA,
 };
 
 #ifdef CONFIG_S3C64XX_ADCTS
@@ -412,12 +408,20 @@ static struct s3c_adc_mach_info s3c_adc_platform __initdata = {
 static void __init spica_fixup(struct machine_desc *desc,
 		struct tag *tags, char **cmdline, struct meminfo *mi)
 {
-	mi->nr_banks = 1;
-	
+	/*
+	 * Bank start addresses are not present in the information
+	 * passed in from the boot loader.  We could potentially
+	 * detect them, but instead we hard-code them.
+	 */
 	mi->bank[0].start = PHYS_OFFSET;
-	mi->bank[0].size = PHYS_UNRESERVED_SIZE;
-	mi->bank[0].node = 0;
+
+ 	mi->bank[0].size = PHYS_UNRESERVED_SIZE;
+
+	mi->bank[0].node = PHYS_TO_NID(start);
+
+	mi->nr_banks = 1;
 }
+
 
 static void __init s3c64xx_allocate_memory_regions(void)
 {
@@ -443,7 +447,7 @@ static void spica_set_qos(void)
 	u32 reg;     							 /* AXI sfr */     
 
 	reg = (u32) ioremap((unsigned long) S3C6410_PA_AXI_SYS, SZ_4K); /* QoS override: FIMD min. latency */
-	writel(0xffb6, S3C_VA_SYS + 0x128);  	    			/* AXI QoS */
+	writel(0xffee, S3C_VA_SYS + 0x128);  	    			/* AXI QoS */
 	writel(0x7, reg + 0x460);   					/* (8 - MFC ch.) */
 	writel(0x7ff7, reg + 0x464);      				/* Bus cacheable */
 	writel(0x8ff, S3C_VA_SYS + 0x838); 
@@ -632,6 +636,17 @@ static void spica_switch_init(void)
 static void __init spica_machine_init(void)
 {
 	spica_init_gpio();
+
+	//MOTOR and VIBTONZE DISABLE
+	if (gpio_is_valid(GPIO_VIB_EN)) {
+		if (gpio_request(GPIO_VIB_EN, S3C_GPIO_LAVEL(GPIO_VIB_EN))) 
+				printk(KERN_ERR "Failed to request GPIO_VIB_EN!\n");
+		gpio_direction_output(GPIO_VIB_EN, GPIO_LEVEL_LOW);
+        gpio_free(GPIO_VIB_EN);
+	}
+	s3c_gpio_cfgpin(GPIO_VIB_EN, S3C_GPIO_SFN(GPIO_VIB_EN_AF));
+	s3c_gpio_setpull(GPIO_VIB_EN, S3C_GPIO_PULL_DOWN);
+	gpio_direction_output(GPIO_VIB_EN, GPIO_LEVEL_LOW);
 
 	s3c_i2c0_set_platdata(NULL);
 	s3c_i2c1_set_platdata(NULL);
@@ -1201,7 +1216,7 @@ static int spica_gpio_table[][6] = {
 	{ GPIO_TOUCH_I2C_SDA, 0, GPIO_LEVEL_NONE, S3C_GPIO_PULL_NONE, S3C_GPIO_SLP_INPUT, S3C_GPIO_PULL_NONE },
 	{ GPIO_FM_I2C_SCL, 0, GPIO_LEVEL_NONE, S3C_GPIO_PULL_NONE, S3C_GPIO_SLP_INPUT, S3C_GPIO_PULL_NONE },
 	{ GPIO_FM_I2C_SDA, 0, GPIO_LEVEL_NONE, S3C_GPIO_PULL_NONE, S3C_GPIO_SLP_INPUT, S3C_GPIO_PULL_NONE },
-	{ GPIO_VIB_EN, 1, GPIO_LEVEL_LOW, S3C_GPIO_PULL_NONE, S3C_GPIO_SLP_OUT0, S3C_GPIO_PULL_NONE },
+	{ GPIO_VIB_EN, GPIO_VIB_EN_AF, GPIO_LEVEL_LOW, S3C_GPIO_PULL_NONE, S3C_GPIO_SLP_OUT0, S3C_GPIO_PULL_NONE },
 	{ GPIO_WLAN_D_0, 0, GPIO_LEVEL_NONE, S3C_GPIO_PULL_NONE, S3C_GPIO_SLP_INPUT, S3C_GPIO_PULL_NONE },
 	{ GPIO_WLAN_D_1, 0, GPIO_LEVEL_NONE, S3C_GPIO_PULL_NONE, S3C_GPIO_SLP_INPUT, S3C_GPIO_PULL_NONE },
 	{ GPIO_WLAN_D_2, 0, GPIO_LEVEL_NONE, S3C_GPIO_PULL_NONE, S3C_GPIO_SLP_INPUT, S3C_GPIO_PULL_NONE },

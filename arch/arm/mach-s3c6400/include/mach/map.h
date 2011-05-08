@@ -133,14 +133,6 @@
 #define S3C64XX_PA_ROTATOR  (0x77200000)
 #define S3C_SZ_ROTATOR      SZ_1M
 
-/* TV-ENCODER */
-#define S3C64XX_PA_TVENC    (0x76200000)
-#define S3C_SZ_TVENC        SZ_1M
-
-/* TV-SCALER*/
-#define S3C64XX_PA_TVSCALER (0x76300000)
-#define S3C_SZ_TVSCALER     SZ_1M
-
 /* VPP */
 #define S3C64XX_PA_VPP      (0x77000000)
 #define S3C_SZ_VPP      SZ_1M

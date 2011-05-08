@@ -114,11 +114,11 @@ static struct s3c_fb_pd_win smdk6410_fb_win0 = {
 		.lower_margin	= 5,
 		.hsync_len	= 3,
 		.vsync_len	= 1,
-		.xres		= 800,
+		.xres		= 320,
 		.yres		= 480,
 	},
 	.max_bpp	= 32,
-	.default_bpp	= 16,
+	.default_bpp	= 24,
 };
 
 /* 405566 clocks per frame => 60Hz refresh requires 24333960Hz clock */

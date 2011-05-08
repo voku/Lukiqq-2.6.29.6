@@ -36,10 +36,10 @@ static char procfs_buffer[PROCFS_SIZE]="0\0\0";
 static unsigned long procfs_buffer_size=1;
 static unsigned int undervolt=0;
 #define DEF_800 1350
-#define DEF_400 1150
-#define DEF_266 1100
+#define DEF_400 1250
+#define DEF_266 1150
 #define DEF_133 1050
-#define DEF_66 	1050
+#define DEF_66 	1000
 
 #include <asm/system.h>
 #include <plat/s3c64xx-dvfs.h>
@@ -68,7 +68,6 @@ int uv_procfile_read(char *buffer,
 
 	return ret;
 }
-
 
 static struct cpufreq_frequency_table freq_table_532MHz[] = {
 	{0, 532*KHZ_T},
@@ -138,19 +137,18 @@ static const unsigned int frequency_match_532MHz[][4] = {
 #endif /* USE_DVFS_AL1_LEVEL */
 };
 
-
 /* frequency voltage matching table */
 static unsigned int frequency_match_800MHz[][4] = {
 /* frequency, Mathced VDD ARM voltage , Matched VDD INT*/
 	{800000, DEF_800, 1250, 0},
-	{400000, DEF_400, 1250, 1},
-	{266000, DEF_266, 1250, 2},
-	{133000, DEF_133, 1250, 3},
+	{400000, DEF_400, 1200, 1},
+	{266000, DEF_266, 1150, 2},
+	{133000, DEF_133, 1050, 3},
 #ifdef USE_DVFS_AL1_LEVEL
 	{133000, DEF_133, 1050, 4},
-	{66000, DEF_66, 1050, 5},
+	{66000, DEF_66, 1000, 5},
 #else
-	{66000, 1050, 1050, 4},
+	{66000, DEF_66, 1000, 4},
 #endif /* USE_DVFS_AL1_LEVEL */
 };
 
@@ -181,7 +179,12 @@ int uv_procfile_write(struct file *file, const char *buffer, unsigned long count
 		frequency_match_800MHz[1][1]=DEF_400-undervolt;
 		frequency_match_800MHz[2][1]=DEF_266-undervolt;
 		frequency_match_800MHz[3][1]=DEF_133-undervolt;
+		#ifdef USE_DVFS_AL1_LEVEL
+		frequency_match_800MHz[4][1]=DEF_133-undervolt;
+		frequency_match_800MHz[5][1]=DEF_66-undervolt;
+		#else
 		frequency_match_800MHz[4][1]=DEF_66-undervolt;
+		#endif /* USE_DVFS_AL1_LEVEL */
 	}
 	
 	return procfs_buffer_size;
@@ -203,27 +206,37 @@ static struct cpufreq_frequency_table *s3c6410_freq_table[] = {
 	freq_table_800MHz,
 };
 
+int set_max_freq_flag = 0;
 int dvfs_change_quick = 0;
 void set_dvfs_perf_level(void)
 {
-	spin_lock(&dvfs_lock);	
+	unsigned long flag;
+	if(spin_trylock_irqsave(&dvfs_lock, flag)){
 
-	/* if user input (keypad, touchscreen) occur, raise up 800MHz */
-	/* maximum frequency :800MHz(0), 400MHz(1) */
-	s3c64xx_cpufreq_index = 0;
+		/* if some user event (keypad, touchscreen) occur, freq will be raised to 532MHz */
+		/* maximum frequency :532MHz(0), 266MHz(1) */
+		s3c64xx_cpufreq_index = 0;
 	dvfs_change_quick = 1;
-	spin_unlock(&dvfs_lock);
+		spin_unlock_irqrestore(&dvfs_lock,flag);
+	}
 }
 EXPORT_SYMBOL(set_dvfs_perf_level);
 
 static int dvfs_level_count = 0;
 void set_dvfs_level(int flag)
 {
-	spin_lock(&dvfs_lock);	
+//to do
+	unsigned long irq_flags;
+#if 1
+	if(set_max_freq_flag){
+	  dvfs_level_count = (flag == 0)?(dvfs_level_count + 1):(dvfs_level_count - 1);
+	  return;
+	}	
+	if(spin_trylock_irqsave(&dvfs_lock,irq_flags)){	
 	if(flag == 0) {
 		if (dvfs_level_count > 0) {
 			dvfs_level_count++;	
-			spin_unlock(&dvfs_lock);
+			spin_unlock_irqrestore(&dvfs_lock,irq_flags);
 			return;
 		}
 #ifdef USE_DVFS_AL1_LEVEL
@@ -236,13 +249,15 @@ void set_dvfs_level(int flag)
 	else {
 		if (dvfs_level_count > 1) {
 			dvfs_level_count--;
-			spin_unlock(&dvfs_lock);
+				spin_unlock_irqrestore(&dvfs_lock,irq_flags);
 			return;
 		}
-		s3c64xx_cpufreq_level = S3C64XX_MAXFREQLEVEL;
+			s3c64xx_cpufreq_level = S3C64XX_MAXFREQLEVEL;
 		dvfs_level_count--;
 	}
-	spin_unlock(&dvfs_lock);
+		spin_unlock_irqrestore(&dvfs_lock,irq_flags);
+	}
+#endif
 }
 EXPORT_SYMBOL(set_dvfs_level);
 
@@ -484,6 +499,37 @@ s3c6410_target_end:
 	return ret;
 }
 
+void dvfs_set_max_freq_lock(void)
+{
+	//Interrupts must be enabled when this function is called.
+   //there may be race..but no problem
+	//don't use locks...locks might cause soft lockup here
+   struct cpufreq_frequency_table *freq_tab = s3c6410_freq_table[S3C64XX_FREQ_TAB];
+	set_max_freq_flag = 1;
+	s3c64xx_cpufreq_level = 0;
+	s3c6410_target(NULL, freq_tab[0].frequency, 1);
+	dvfs_change_quick = 1;   //better to have this flag because we are not using locks. 
+	return; 
+	
+}
+
+void dvfs_set_max_freq_unlock(void)
+{
+        set_max_freq_flag = 0;
+	if (dvfs_level_count > 0) {
+#ifdef USE_DVFS_AL1_LEVEL
+		s3c64xx_cpufreq_level = S3C64XX_MAXFREQLEVEL - 2;
+#else
+		s3c64xx_cpufreq_level = S3C64XX_MAXFREQLEVEL - 1;
+#endif /* USE_DVFS_AL1_LEVEL */
+	}
+	else {
+		s3c64xx_cpufreq_level = S3C64XX_MAXFREQLEVEL;
+	}
+	return;
+
+}
+
 unsigned int get_min_cpufreq(void)
 {
 	return (s3c6410_freq_table[S3C64XX_FREQ_TAB][S3C64XX_MAXFREQLEVEL].frequency);
@@ -526,7 +572,7 @@ static int __init s3c6410_cpu_init(struct cpufreq_policy *policy)
 	clk_put(mpu_clk);
 
 	spin_lock_init(&dvfs_lock);
- 
+
 	UV_Proc_File = xm_add(PROCFS_NAME);
 	
 	if (UV_Proc_File == NULL) {

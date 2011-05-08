@@ -791,3 +791,4 @@ module_exit(s3c_soc_platform_exit);
 MODULE_AUTHOR("Ben Dooks, <ben@simtec.co.uk>");
 MODULE_DESCRIPTION("Samsung S3C24XX PCM DMA module");
 MODULE_LICENSE("GPL");
+

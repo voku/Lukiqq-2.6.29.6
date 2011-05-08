@@ -61,12 +61,12 @@ s3c_fimd_info_t s3c_fimd = {
 	.vidcon0 = S3C_VIDCON0_INTERLACE_F_PROGRESSIVE | S3C_VIDCON0_VIDOUT_RGB_IF | S3C_VIDCON0_L1_DATA16_SUB_16_MODE | \
 	           S3C_VIDCON0_L0_DATA16_MAIN_16_MODE | S3C_VIDCON0_PNRMODE_RGB_P | \
 	           S3C_VIDCON0_CLKVALUP_ALWAYS | S3C_VIDCON0_CLKDIR_DIVIDED | S3C_VIDCON0_CLKSEL(1) | \
-	           S3C_VIDCON0_ENVID_DISABLE | S3C_VIDCON0_ENVID_F_DISABLE,
+	           S3C_VIDCON0_ENVID_ENABLE | S3C_VIDCON0_ENVID_F_DISABLE,
 #else
 	.vidcon0 = S3C_VIDCON0_INTERLACE_F_PROGRESSIVE | S3C_VIDCON0_VIDOUT_RGB_IF | S3C_VIDCON0_L1_DATA16_SUB_16_MODE | \
 	           S3C_VIDCON0_L0_DATA16_MAIN_16_MODE | S3C_VIDCON0_PNRMODE_RGB_P | \
 	           S3C_VIDCON0_CLKVALUP_ALWAYS | S3C_VIDCON0_CLKDIR_DIRECTED | S3C_VIDCON0_CLKSEL(1) | \
-	           S3C_VIDCON0_ENVID_DISABLE | S3C_VIDCON0_ENVID_F_DISABLE,
+	           S3C_VIDCON0_ENVID_ENABLE | S3C_VIDCON0_ENVID_F_DISABLE,
 #endif
 // End of KSS_2009-09-03
 	.dithmode = (S3C_DITHMODE_RDITHPOS_5BIT | S3C_DITHMODE_GDITHPOS_6BIT | S3C_DITHMODE_BDITHPOS_5BIT ) & S3C_DITHMODE_DITHERING_DISABLE,
@@ -826,7 +826,7 @@ irqreturn_t s3cfb_irq(int irqno, void *param)
 
 			s3c_fb_info[i].fb.fix.smem_len     =   s3c_fb_info[i].next_fb_info.xres_virtual
 			                                     * s3c_fb_info[i].next_fb_info.yres_virtual
-			                                     * s3c_fimd.bytes_per_pixel;
+			                                     * /*s3c_fimd.bytes_per_pixel*/ 4;
 
 			s3c_fb_info[i].fb.var.xres         = s3c_fb_info[i].next_fb_info.xres;
 			s3c_fb_info[i].fb.var.yres         = s3c_fb_info[i].next_fb_info.yres;
@@ -1032,8 +1032,8 @@ int s3cfb_init_registers(s3c_fb_info_t *fbi)
 
 	if (win_num == 0)
 	{
-#if defined(S3C_FB_DISPLAY_LOGO)
-		lcd_clock = clk_get(NULL, "lcd");	/* Early Clock Setting to Sync Bootloader */
+		/* Early Clock Setting to Sync Bootloader */
+		lcd_clock = clk_get(NULL, "lcd");
 
 // KSS_2009-09-03 : Change LCD Dot Clk
 #ifndef S3C_FB_USE_CLK_DIRECTED
@@ -1049,25 +1049,11 @@ int s3cfb_init_registers(s3c_fb_info_t *fbi)
 		s3c_fimd.vidcon0 &= ~S3C_VIDCON0_CLKVAL_F(0xFF);
 #endif	// End of S3C_FB_USE_CLK_DIRECTED
 
-		s3c_fimd.vidcon0 = s3c_fimd.vidcon0 | (S3C_VIDCON0_ENVID_ENABLE | S3C_VIDCON0_ENVID_F_ENABLE);
+		/* Enable the display controller */
+		s3c_fimd.vidcon0 |= S3C_VIDCON0_ENVID_ENABLE;
+		s3c_fimd.vidcon0 |= S3C_VIDCON0_ENVID_F_ENABLE;
 		writel(s3c_fimd.vidcon0, S3C_VIDCON0);
-#else	// S3C_FB_DISPLAY_LOGO
-		s3c_fimd.vidcon0 = s3c_fimd.vidcon0 & ~(S3C_VIDCON0_ENVID_ENABLE | S3C_VIDCON0_ENVID_F_ENABLE);
-		writel(s3c_fimd.vidcon0, S3C_VIDCON0);
-		lcd_clock = clk_get(NULL, "lcd");
-#ifndef S3C_FB_USE_CLK_DIRECTED
-		s3c_fimd.vidcon0 |= S3C_VIDCON0_CLKVAL_F((int)(((((clk_get_rate(lcd_clock) * 10) / s3c_fimd.pixclock) % 10) > 4) ?
-												(clk_get_rate(lcd_clock) / s3c_fimd.pixclock) :
-												((clk_get_rate(lcd_clock) / s3c_fimd.pixclock) - 1)));
-#else
-		{
-			u32 clkdiv1 = __raw_readl(S3C_CLK_DIV1);
-			clkdiv1 = (clkdiv1 & ~0xF000) | (12<<12);
-			__raw_writel(clkdiv1, S3C_CLK_DIV1);
-		}
-		s3c_fimd.vidcon0 &= ~S3C_VIDCON0_CLKVAL_F(0xFF);
-#endif	// End of S3C_FB_USE_CLK_DIRECTED
-#endif	// End of S3C_FB_DISPLAY_LOGO
+
 // End of KSS_2009-09-03
 	}
 
@@ -1124,9 +1110,7 @@ int s3cfb_init_registers(s3c_fb_info_t *fbi)
 	switch (win_num)
 	{
 		case 0:
-#ifndef CONFIG_FB_S3C_BPP_24
 			writel(s3c_fimd.wincon0,    S3C_WINCON0);
-#endif
 			writel(s3c_fimd.vidcon0,    S3C_VIDCON0);
 			writel(s3c_fimd.vidcon1,    S3C_VIDCON1);
 			writel(s3c_fimd.vidtcon0,   S3C_VIDTCON0);
@@ -1144,9 +1128,7 @@ int s3cfb_init_registers(s3c_fb_info_t *fbi)
 			break;
 
 		case 1:
-#ifndef CONFIG_FB_S3C_BPP_24
 			writel(s3c_fimd.wincon1,  S3C_WINCON1);
-#endif
 			writel(s3c_fimd.vidosd1a, S3C_VIDOSD1A);
 			writel(s3c_fimd.vidosd1b, S3C_VIDOSD1B);
 			writel(s3c_fimd.vidosd1c, S3C_VIDOSD1C);
@@ -1154,6 +1136,9 @@ int s3cfb_init_registers(s3c_fb_info_t *fbi)
 			writel(s3c_fimd.wpalcon,  S3C_WPALCON);
 
 			s3cfb_onoff_win(fbi, OFF);
+#if defined(S3C_FB_DISPLAY_LOGO)
+			s3cfb_start_progress();
+#endif
 			break;
 
 		case 2:
@@ -1165,9 +1150,6 @@ int s3cfb_init_registers(s3c_fb_info_t *fbi)
 			writel(s3c_fimd.wpalcon,  S3C_WPALCON);
 
 			s3cfb_onoff_win(fbi, OFF);
-#if defined(S3C_FB_DISPLAY_LOGO)
-			s3cfb_start_progress();
-#endif
 			break;
 
 		case 3:
@@ -2011,11 +1993,10 @@ int s3cfb_is_clock_on(void)
 
 void s3cfb_enable_clock_power(void)
 {
-	struct early_suspend *early_suspend_ptr;
+	struct early_suspend *early_suspend_ptr = get_earlysuspend_ptr();
+	s3c_fb_info_t *info =
+		container_of(early_suspend_ptr, s3c_fb_info_t, early_suspend);
 	
-	early_suspend_ptr = get_earlysuspend_ptr();
-
-	s3c_fb_info_t *info = container_of(early_suspend_ptr, s3c_fb_info_t, early_suspend);
 	s3cfb_resume_sub(info);
 
 	lcd_clock_status = 1;
@@ -2090,10 +2071,9 @@ int s3cfb_resume(struct platform_device *dev)
  * shutdown
  */
 extern void lcd_power_ctrl(s32 value);
-int s3cfb_shutdown(struct platform_device *dev)
+void s3cfb_shutdown(struct platform_device *dev)
 {
 	lcd_power_ctrl(0);
-	return 0;
 }
 #else
 
@@ -2126,7 +2106,7 @@ int s3cfb_resume(struct platform_device *dev)
 /*
  * shutdown
  */
-int s3cfb_shutdown(struct platform_device *dev)
+void s3cfb_shutdown(struct platform_device *dev)
 {
 	lcd_power_ctrl(0);
 }
@@ -2143,8 +2123,7 @@ int s3cfb_resume(struct platform_device *dev)
 	return 0;
 }
 
-int s3cfb_shutdown(struct platform_device *dev)
+void s3cfb_shutdown(struct platform_device *dev)
 {
-	return 0;
 }
 #endif	/* CONFIG_PM */
